@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MineSim – Voladura y Costos (corrección Excel una columna)</title>
+  <title>MineSim – Voladura y Costos (v7 con 9 gráficos)</title>
   <style>
     :root {
       --fondo: #f6f0e7;
@@ -74,6 +74,11 @@
     .field { margin-bottom: 10px; }
     .field label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 3px; color: #5b4b3a; }
     .field input, .field select { width: 100%; padding: 8px; border: 1px solid var(--borde); border-radius: 6px; background: white; font-size: 13px; }
+    .field input[type=range] { padding: 4px 0; }
+
+    .coord-group { display: flex; gap: 6px; align-items: center; }
+    .coord-group input[type=number] { width: 70px; text-align: center; }
+    .coord-group input[type=range] { flex: 1; }
 
     button { background: var(--boton); border: 1px solid var(--borde); border-radius: 8px; padding: 6px 14px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 13px; }
     button:hover { background: #d9c2a5; transform: translateY(-1px); }
@@ -109,30 +114,18 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-
 <!-- Landing -->
 <div id="landing">
   <div class="landing-card">
     <h1>⛰️ MineSim – Voladura y Costos</h1>
-    <p>Simulador académico para diseño de malla, vibraciones, zonas sensibles y costos.<br>
-    Carga tu proyecto desde Excel, JSON o CSV.</p>
+    <p>Simulador académico completo con fragmentación, costos, sensibilidad y límites DIN.</p>
     <div class="landing-actions">
-      <div class="option primary" style="width:300px;">
-        <h3>📂 Continuar con archivo</h3>
-        <p>Importa tu proyecto desde Excel, JSON o CSV.</p>
-        <label class="file-label" for="landingFile">Seleccionar archivo</label>
-        <input type="file" id="landingFile" class="file-input" accept=".xlsx,.xls,.json,.csv" onchange="loadLandingFile(this)" />
-      </div>
-      <div class="option" onclick="startManual()" style="width:300px;">
-        <h3>🛠️ Nuevo proyecto manual</h3>
-        <p>Comienza de cero.</p>
-        <button style="margin-top:10px;">Comenzar sin archivo</button>
-      </div>
+      <div class="option primary" style="width:300px;"><h3>📂 Continuar con archivo</h3><label class="file-label" for="landingFile">Seleccionar archivo</label><input type="file" id="landingFile" class="file-input" accept=".xlsx,.xls,.json,.csv" onchange="loadLandingFile(this)" /></div>
+      <div class="option" onclick="startManual()" style="width:300px;"><h3>🛠️ Nuevo proyecto manual</h3><button style="margin-top:10px;">Comenzar sin archivo</button></div>
     </div>
   </div>
 </div>
-
-<!-- Aplicación -->
+<!-- App -->
 <div id="app" class="hidden">
   <div class="site-header">
     <h1>⛰️ <span>MineSim</span> – Diseño y Costos</h1>
@@ -142,76 +135,51 @@
       <button onclick="exportJSON()">📤 JSON</button>
       <button onclick="exportCSV()">📤 CSV</button>
       <button onclick="downloadTemplate()">📄 Plantilla</button>
-      <label class="file-label" style="margin:0;">Cargar
-        <input type="file" id="appFile" class="file-input" accept=".xlsx,.xls,.json,.csv" onchange="loadAppFile(this)" />
-      </label>
+      <label class="file-label" style="margin:0;">Cargar <input type="file" id="appFile" class="file-input" accept=".xlsx,.xls,.json,.csv" onchange="loadAppFile(this)" /></label>
     </div>
   </div>
   <div class="app-body">
-    <!-- SIDEBAR IZQUIERDA -->
     <div class="sidebar">
-      <div class="accordion open">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">⚙️ Voladura <span>▼</span></div>
-        <div class="accordion-body">
-          <div class="field"><label>📍 X (m)</label><input id="blastX" type="range" min="-800" max="800" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>📍 Y (m)</label><input id="blastY" type="range" min="-800" max="800" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>Frecuencia (Hz)</label><input id="freqHz" type="number" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>Límite PPV (mm/s)</label><input id="ppvLimit" type="number" step="0.1" oninput="updateAll()"></div>
-          <div class="field"><label>P80 objetivo (mm)</label><input id="p80Target" type="number" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>Diámetro (mm)</label><input id="D" type="number" min="50" max="400" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>Burden (m)</label><input id="B" type="number" min="0.5" max="15" step="0.1" oninput="updateAll()"></div>
-          <div class="field"><label>Espaciamiento (m)</label><input id="S" type="number" min="0.5" max="20" step="0.1" oninput="updateAll()"></div>
-          <div class="field"><label>Altura banco (m)</label><input id="H" type="number" step="0.5" oninput="updateAll()"></div>
-          <div class="field"><label>Taco (m)</label><input id="T" type="number" step="0.1" oninput="updateAll()"></div>
-          <div class="field"><label>Subperf. (m)</label><input id="J" type="number" step="0.1" oninput="updateAll()"></div>
-          <div class="field"><label>Taladros/ret</label><input id="holesDelay" type="number" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>N° retardos</label><input id="delays" type="number" step="1" oninput="updateAll()"></div>
-        </div>
-      </div>
-      <div class="accordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">💥 Explosivo <span>▼</span></div>
-        <div class="accordion-body">
-          <div class="field"><label>Densidad (kg/m³)</label><input id="rhoExpl" type="number" step="10" oninput="updateAll()"></div>
-          <div class="field"><label>RWS (%)</label><input id="rws" type="number" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>Acoplamiento</label><input id="coupling" type="number" min="0.1" max="1" step="0.01" oninput="updateAll()"></div>
-        </div>
-      </div>
-      <div class="accordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">🗿 Macizo <span>▼</span></div>
-        <div class="accordion-body">
-          <div class="field"><label>Factor A</label><input id="rockA" type="number" step="0.1" oninput="updateAll()"></div>
-          <div class="field"><label>K far</label><input id="Kfar" type="number" step="10" oninput="updateAll()"></div>
-          <div class="field"><label>n far</label><input id="nfar" type="number" step="0.05" oninput="updateAll()"></div>
-        </div>
-      </div>
-      <div class="accordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">✂️ Precorte <span>▼</span></div>
-        <div class="accordion-body">
-          <div class="field"><label><input id="preEnabled" type="checkbox" onchange="updateAll()" checked> Activar</label></div>
-          <div class="field"><label>Ángulo (°)</label><input id="preAngle" type="number" step="1" oninput="updateAll()"></div>
-          <div class="field"><label>Offset (m)</label><input id="preOffset" type="number" step="1" oninput="updateAll()"></div>
-        </div>
-      </div>
-      <div class="accordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">🏘️ Zonas <span>▼</span></div>
-        <div class="accordion-body" id="zonesContainer">
-          <button onclick="addZone()" class="primary" style="width:100%; margin-bottom:8px;">+ Añadir zona</button>
-        </div>
-      </div>
-      <div class="accordion">
-        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">💰 Costos <span>▼</span></div>
-        <div class="accordion-body">
-          <div class="field"><label>Perf. ($/m)</label><input id="costDrill" type="number" step="0.1" oninput="updateAll()"></div>
-          <div class="field"><label>Expl. ($/kg)</label><input id="costExpl" type="number" step="0.01" oninput="updateAll()"></div>
-          <div class="field"><label>Carguío ($/t)</label><input id="costLoad" type="number" step="0.01" oninput="updateAll()"></div>
-          <div class="field"><label>Transp. ($/t)</label><input id="costHaul" type="number" step="0.01" oninput="updateAll()"></div>
-          <div class="field"><label>Prod. diaria (t)</label><input id="dailyProd" type="number" step="1000" oninput="updateAll()"></div>
-          <div class="field"><label>Días/año</label><input id="daysYear" type="number" step="1" oninput="updateAll()"></div>
-        </div>
-      </div>
+      <div class="accordion open"><div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">⚙️ Voladura <span>▼</span></div><div class="accordion-body">
+        <div class="field"><label>📍 X (m)</label><div class="coord-group"><input type="number" id="blastX_num" min="-800" max="800" step="1" oninput="syncSlider('blastX_num','blastX')"><input type="range" id="blastX" min="-800" max="800" step="1" oninput="syncNumber('blastX','blastX_num')"></div></div>
+        <div class="field"><label>📍 Y (m)</label><div class="coord-group"><input type="number" id="blastY_num" min="-800" max="800" step="1" oninput="syncSlider('blastY_num','blastY')"><input type="range" id="blastY" min="-800" max="800" step="1" oninput="syncNumber('blastY','blastY_num')"></div></div>
+        <div class="field"><label>Frecuencia (Hz)</label><input id="freqHz" type="number" step="1" oninput="updateAll()"></div>
+        <div class="field"><label>Límite PPV (mm/s)</label><input id="ppvLimit" type="number" step="0.1" oninput="updateAll()"></div>
+        <div class="field"><label>P80 objetivo (mm)</label><input id="p80Target" type="number" step="1" oninput="updateAll()"></div>
+        <div class="field"><label>Diámetro (mm)</label><input id="D" type="number" min="50" max="400" step="1" oninput="updateAll()"></div>
+        <div class="field"><label>Burden (m)</label><input id="B" type="number" min="0.5" max="15" step="0.1" oninput="updateAll()"></div>
+        <div class="field"><label>Espaciamiento (m)</label><input id="S" type="number" min="0.5" max="20" step="0.1" oninput="updateAll()"></div>
+        <div class="field"><label>Altura banco (m)</label><input id="H" type="number" step="0.5" oninput="updateAll()"></div>
+        <div class="field"><label>Taco (m)</label><input id="T" type="number" step="0.1" oninput="updateAll()"></div>
+        <div class="field"><label>Subperf. (m)</label><input id="J" type="number" step="0.1" oninput="updateAll()"></div>
+        <div class="field"><label>Taladros/ret</label><input id="holesDelay" type="number" step="1" oninput="updateAll()"></div>
+        <div class="field"><label>N° retardos</label><input id="delays" type="number" step="1" oninput="updateAll()"></div>
+      </div></div>
+      <div class="accordion"><div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">💥 Explosivo <span>▼</span></div><div class="accordion-body">
+        <div class="field"><label>Densidad (kg/m³)</label><input id="rhoExpl" type="number" step="10" oninput="updateAll()"></div>
+        <div class="field"><label>RWS (%)</label><input id="rws" type="number" step="1" oninput="updateAll()"></div>
+        <div class="field"><label>Acoplamiento</label><input id="coupling" type="number" min="0.1" max="1" step="0.01" oninput="updateAll()"></div>
+      </div></div>
+      <div class="accordion"><div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">🗿 Macizo <span>▼</span></div><div class="accordion-body">
+        <div class="field"><label>Factor A</label><input id="rockA" type="number" step="0.1" oninput="updateAll()"></div>
+        <div class="field"><label>K far</label><input id="Kfar" type="number" step="10" oninput="updateAll()"></div>
+        <div class="field"><label>n far</label><input id="nfar" type="number" step="0.05" oninput="updateAll()"></div>
+      </div></div>
+      <div class="accordion"><div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">✂️ Precorte <span>▼</span></div><div class="accordion-body">
+        <div class="field"><label><input id="preEnabled" type="checkbox" onchange="updateAll()" checked> Activar</label></div>
+        <div class="field"><label>Ángulo (°)</label><input id="preAngle" type="number" step="1" oninput="updateAll()"></div>
+        <div class="field"><label>Offset (m)</label><input id="preOffset" type="number" step="1" oninput="updateAll()"></div>
+      </div></div>
+      <div class="accordion"><div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">🏘️ Zonas <span>▼</span></div><div class="accordion-body" id="zonesContainer"><button onclick="addZone()" class="primary" style="width:100%; margin-bottom:8px;">+ Añadir zona</button></div></div>
+      <div class="accordion"><div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">💰 Costos <span>▼</span></div><div class="accordion-body">
+        <div class="field"><label>Perf. ($/m)</label><input id="costDrill" type="number" step="0.1" oninput="updateAll()"></div>
+        <div class="field"><label>Expl. ($/kg)</label><input id="costExpl" type="number" step="0.01" oninput="updateAll()"></div>
+        <div class="field"><label>Carguío ($/t)</label><input id="costLoad" type="number" step="0.01" oninput="updateAll()"></div>
+        <div class="field"><label>Transp. ($/t)</label><input id="costHaul" type="number" step="0.01" oninput="updateAll()"></div>
+        <div class="field"><label>Prod. diaria (t)</label><input id="dailyProd" type="number" step="1000" oninput="updateAll()"></div>
+        <div class="field"><label>Días/año</label><input id="daysYear" type="number" step="1" oninput="updateAll()"></div>
+      </div></div>
     </div>
-
-    <!-- CONTENIDO PRINCIPAL -->
     <div class="main-content">
       <div class="kpi-grid">
         <div class="kpi-card"><small>Carga/tal</small><b id="kpiHole">--</b></div>
@@ -225,46 +193,47 @@
         <div class="panel">
           <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">
             <h3 style="margin:0;">Mapa de voladura</h3>
-            <div>
-              <div class="heatmap-control" style="margin-bottom:0;">
-                <label><input type="checkbox" id="showHeatmap" checked onchange="drawMap()"> Mapa de calor</label>
-              </div>
-              <div class="legend">
-                <div class="legend-item"><span class="legend-color" style="background:#2ecc71;"></span> I Industrial (tolerancia alta)</div>
-                <div class="legend-item"><span class="legend-color" style="background:#f1c40f;"></span> II Vivienda/Concreto</div>
-                <div class="legend-item"><span class="legend-color" style="background:#e74c3c;"></span> III Adobe/Sensible (muy restrictivo)</div>
-              </div>
-            </div>
+            <div><div class="heatmap-control" style="margin-bottom:0;"><label><input type="checkbox" id="showHeatmap" checked onchange="drawMap()"> Mapa de calor</label></div>
+            <div class="legend"><div class="legend-item"><span class="legend-color" style="background:#2ecc71;"></span> I Industrial</div><div class="legend-item"><span class="legend-color" style="background:#f1c40f;"></span> II Vivienda</div><div class="legend-item"><span class="legend-color" style="background:#e74c3c;"></span> III Sensible</div></div></div>
           </div>
-          <div class="canvas-wrap" style="height:320px;"><canvas id="mapCanvas"></canvas></div>
+          <div class="canvas-wrap" style="height:300px;"><canvas id="mapCanvas"></canvas></div>
         </div>
         <div class="panel">
           <h3 style="margin:0 0 6px;">PPV vs Distancia</h3>
-          <div class="canvas-wrap" style="height:320px;"><canvas id="chartCanvas"></canvas></div>
+          <div class="canvas-wrap" style="height:300px;"><canvas id="chartCanvas"></canvas></div>
+        </div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
+        <div class="panel"><h3 style="margin-top:0;">Curva de Fragmentación</h3><div class="canvas-wrap" style="height:200px;"><canvas id="fragCanvas"></canvas></div></div>
+        <div class="panel"><h3 style="margin-top:0;">Límites DIN 4150</h3><div class="canvas-wrap" style="height:200px;"><canvas id="dinCanvas"></canvas></div></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
+        <div class="panel"><h3 style="margin-top:0;">Energía vs Fragmentación</h3><div class="canvas-wrap" style="height:200px;"><canvas id="energyCanvas"></canvas></div></div>
+        <div class="panel"><h3 style="margin-top:0;">Costo Total / Disparo (US$)</h3><div class="canvas-wrap" style="height:200px;"><canvas id="barCanvas"></canvas></div></div>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px;">
+        <div class="panel"><h3 style="margin-top:0;">Estructura de Costos</h3><div class="canvas-wrap" style="height:230px;"><canvas id="costCanvas"></canvas></div></div>
+        <div class="panel"><h3 style="margin-top:0;">Tornado – Costo ($/t)</h3><div class="canvas-wrap" style="height:230px;"><canvas id="tornadoCostCanvas"></canvas></div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="panel">
+          <h3 style="margin-top:0;">Tornado – Sensibilidad PPV máx (mm/s)</h3>
+          <div class="canvas-wrap" style="height:200px;"><canvas id="tornadoPPVCanvas"></canvas></div>
         </div>
       </div>
       <div class="panel" style="margin-top:14px;">
         <table><thead><tr><th>Zona</th><th>Tipo</th><th>Dist (m)</th><th>Protegida</th><th>PPV</th><th>Límite</th><th>Estado</th></tr></thead><tbody id="zoneTable"></tbody></table>
       </div>
       <div style="margin-top:12px; display:flex; gap:12px;">
-        <button class="primary" onclick="sensitivityAnalysis()">📈 Sensibilidad</button>
+        <button class="primary" onclick="sensitivityAnalysis()">📈 Ventana de Sensibilidad</button>
         <button onclick="resetProject()">↺ Reiniciar</button>
       </div>
     </div>
   </div>
 </div>
-
-<!-- Modal -->
-<div id="sensitivityModal" class="modal-overlay">
-  <div class="modal-content">
-    <h2>🌡️ Sensibilidad (±20%)</h2>
-    <div id="sensResults" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0;"></div>
-    <button class="primary" onclick="document.getElementById('sensitivityModal').style.display='none'">Cerrar</button>
-  </div>
-</div>
+<div id="sensitivityModal" class="modal-overlay"><div class="modal-content"><h2>🌡️ Sensibilidad (±20%)</h2><div id="sensResults" style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:16px 0;"></div><button class="primary" onclick="document.getElementById('sensitivityModal').style.display='none'">Cerrar</button></div></div>
 
 <script>
-/* ---------- MODELO ---------- */
 const defaultProject = {
   blast:{x:80,y:60,frequencyHz:18,ppvGeneralLimit:12.5},
   design:{p80Target:300,diameterMm:220,burdenM:4.5,spacingM:9.0,benchH:12,stemmingM:3,subdrillingM:1,holesPerDelay:7,delays:4},
@@ -282,7 +251,10 @@ let project = JSON.parse(JSON.stringify(defaultProject));
 let results = null;
 let map = {scale:0.7,ox:0,oy:0,drag:false,lx:0,ly:0};
 
-/* ---------- IMPORT/EXPORT ---------- */
+function syncSlider(numId, sliderId) { document.getElementById(sliderId).value = document.getElementById(numId).value; updateAll(); }
+function syncNumber(sliderId, numId) { document.getElementById(numId).value = document.getElementById(sliderId).value; updateAll(); }
+
+/* Import / Export */
 function loadLandingFile(input){ if(!input.files[0])return; processFile(input.files[0], ()=>{ document.getElementById('landing').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); initApp(); input.value=''; }); }
 function loadAppFile(input){ if(!input.files[0])return; processFile(input.files[0], ()=>{ initApp(); input.value=''; }); }
 function processFile(file, cb){
@@ -295,147 +267,8 @@ function processFile(file, cb){
     const r=new FileReader(); r.onload=e=>{ try{ project=parseCSV(e.target.result); }catch(err){alert('CSV error: '+err.message);} cb&&cb(); }; r.readAsText(file);
   }else alert('Formato no soportado');
 }
-
-/* ------- parseExcelData CORREGIDO (soporta datos en una sola columna) ------- */
-function parseExcelData(rows) {
-  // Si la primera fila es un string que contiene una coma, asumimos que TODO el archivo viene en una sola columna
-  if (rows.length > 0 && rows[0].length === 1 && typeof rows[0][0] === 'string' && rows[0][0].includes(',')) {
-    console.log('Archivo Excel con formato de una sola columna con comas. Convirtiendo...');
-    // Convertimos las filas en un array de [param, value]
-    const newRows = [];
-    for (let i = 0; i < rows.length; i++) {
-      const cell = String(rows[i][0] || '').trim();
-      if (cell === '') continue;
-      const parts = cell.split(',');
-      if (parts.length >= 2) {
-        const param = parts[0].trim().toLowerCase();
-        const val = parts.slice(1).join(',').trim(); // por si el valor contiene comas
-        newRows.push([param, val]);
-      }
-    }
-    // Ahora procesamos como si fuera un CSV con dos columnas (sin encabezados)
-    const cfg = deepClone(defaultProject);
-    for (let i = 0; i < newRows.length; i++) {
-      const param = newRows[i][0];
-      const val = newRows[i][1];
-      setPath(cfg, param, coerce(val));
-    }
-    return normalizeProject(cfg);
-  }
-
-  // Búsqueda normal de encabezados "parameter" y "value" en varias columnas
-  let hi = -1, pc = -1, vc = -1;
-  for (let i = 0; i < Math.min(10, rows.length); i++) {
-    const row = rows[i] || [];
-    for (let j = 0; j < row.length; j++) {
-      const cell = String(row[j]).toLowerCase().trim();
-      if (cell === 'parameter' || cell === 'parámetro') pc = j;
-      if (cell === 'value' || cell === 'valor') vc = j;
-      if (pc !== -1 && vc !== -1) { hi = i; break; }
-    }
-    if (hi !== -1) break;
-  }
-  if (hi !== -1) {
-    const cfg = deepClone(defaultProject);
-    for (let i = hi + 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (row.length < 2) continue;
-      const param = String(row[pc] || '').trim().toLowerCase();
-      const val = row[vc];
-      setPath(cfg, param, coerce(val));
-    }
-    return normalizeProject(cfg);
-  }
-  // Si tiene exactamente dos columnas, asumir que es parameter,value sin encabezados
-  if (rows.length > 0 && rows[0].length === 2) {
-    const cfg = deepClone(defaultProject);
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (row.length < 2) continue;
-      const param = String(row[0] || '').trim().toLowerCase();
-      const val = row[1];
-      setPath(cfg, param, coerce(val));
-    }
-    return normalizeProject(cfg);
-  }
-  // Último recurso: intentar como zonas
-  return parseZonesFromRows(rows);
-}
-
-/* ------- parseCSV ROBUSTA ------- */
-function parseCSV(text) {
-  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-  text = text.trim();
-  const rows = text.split(/\r?\n/).map(line => {
-    const out = []; let cur = '', inq = false;
-    for (let ch of line) {
-      if (ch === '"') { inq = !inq; continue; }
-      if (ch === ',' && !inq) { out.push(cur.trim()); cur = ''; continue; }
-      cur += ch;
-    }
-    out.push(cur.trim());
-    return out;
-  }).filter(row => row.length > 0 && row.some(cell => cell !== ''));
-
-  if (rows.length === 0) return deepClone(defaultProject);
-
-  const rawHeaders = rows[0].map(h => h.toLowerCase().trim());
-  const headers = rawHeaders.map(h => h.replace(/[^a-z0-9._-]/g, ''));
-
-  const paramIdx = headers.indexOf('parameter');
-  const valueIdx = headers.indexOf('value');
-
-  if (paramIdx !== -1 && valueIdx !== -1) {
-    console.log('CSV: Detectado formato parameter+value');
-    const cfg = deepClone(defaultProject);
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (row.length < 2) continue;
-      const param = String(row[paramIdx] || '').trim().toLowerCase();
-      const val = row[valueIdx];
-      setPath(cfg, param, coerce(val));
-    }
-    return normalizeProject(cfg);
-  }
-
-  const zoneIdx = headers.indexOf('zone_name');
-  if (zoneIdx !== -1) {
-    console.log('CSV: Detectado formato zonas');
-    const cfg = deepClone(defaultProject);
-    cfg.zones = [];
-    for (let i = 1; i < rows.length; i++) {
-      const r = rows[i];
-      const o = {};
-      headers.forEach((h, idx) => { if (idx < r.length) o[h] = r[idx]; });
-      cfg.zones.push({
-        id: o.id || 'z' + Math.random().toString(36).slice(2),
-        name: o.zone_name || 'Zona',
-        x: +o.x || 0,
-        y: +o.y || 0,
-        type: o.type || 'II',
-        enabled: o.enabled !== 'false'
-      });
-    }
-    return cfg;
-  }
-
-  if (rows[0].length === 2) {
-    console.log('CSV: Asumiendo 2 columnas como parameter,value');
-    const cfg = deepClone(defaultProject);
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (row.length < 2) continue;
-      const param = String(row[0] || '').trim().toLowerCase();
-      const val = row[1];
-      setPath(cfg, param, coerce(val));
-    }
-    return normalizeProject(cfg);
-  }
-
-  console.log('CSV: No se reconoció el formato. Primera fila:', rows[0]);
-  throw new Error('Formato CSV no reconocido. Asegúrate de que tenga columnas parameter,value o zone_name,x,y,type.');
-}
-
+function parseExcelData(rows){ let hi=-1,pc=-1,vc=-1; for(let i=0;i<Math.min(10,rows.length);i++){ let row=rows[i]||[]; for(let j=0;j<row.length;j++){ let cell=String(row[j]).toLowerCase().trim(); if(cell==='parameter'||cell==='parámetro')pc=j; if(cell==='value'||cell==='valor')vc=j; if(pc!==-1&&vc!==-1){hi=i;break;} } if(hi!==-1)break; } if(hi!==-1){ const cfg=deepClone(defaultProject); for(let i=hi+1;i<rows.length;i++){ if(rows[i].length<2)continue; setPath(cfg, String(rows[i][pc]||'').trim().toLowerCase(), coerce(rows[i][vc])); } return normalizeProject(cfg); } if(rows.length>0 && rows[0].length===1 && typeof rows[0][0]==='string' && rows[0][0].includes(',')){ const cfg=deepClone(defaultProject); for(let i=0;i<rows.length;i++){ const parts=String(rows[i][0]||'').split(','); if(parts.length>=2) setPath(cfg, parts[0].trim().toLowerCase(), coerce(parts.slice(1).join(',').trim())); } return normalizeProject(cfg); } if(rows.length>0 && rows[0].length===2){ const cfg=deepClone(defaultProject); for(let i=0;i<rows.length;i++){ if(rows[i].length<2)continue; setPath(cfg, String(rows[i][0]||'').trim().toLowerCase(), coerce(rows[i][1])); } return normalizeProject(cfg); } return parseZonesFromRows(rows); }
+function parseCSV(text) { if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); text = text.trim(); const rows = text.split(/\r?\n/).map(line => { const out = []; let cur = '', inq = false; for (let ch of line) { if (ch === '"') { inq = !inq; continue; } if (ch === ',' && !inq) { out.push(cur.trim()); cur = ''; continue; } cur += ch; } out.push(cur.trim()); return out; }).filter(row => row.length > 0 && row.some(cell => cell !== '')); if (rows.length === 0) return deepClone(defaultProject); const headers = rows[0].map(h => h.toLowerCase().trim().replace(/[^a-z0-9._-]/g, '')); const paramIdx = headers.indexOf('parameter'), valueIdx = headers.indexOf('value'); if (paramIdx !== -1 && valueIdx !== -1) { const cfg = deepClone(defaultProject); for (let i = 1; i < rows.length; i++) { if (rows[i].length < 2) continue; setPath(cfg, String(rows[i][paramIdx]||'').trim().toLowerCase(), coerce(rows[i][valueIdx])); } return normalizeProject(cfg); } const zoneIdx = headers.indexOf('zone_name'); if (zoneIdx !== -1) { const cfg = deepClone(defaultProject); cfg.zones = []; for (let i = 1; i < rows.length; i++) { const o = {}; headers.forEach((h, idx) => { if (idx < rows[i].length) o[h] = rows[i][idx]; }); cfg.zones.push({ id: o.id || 'z' + Math.random().toString(36).slice(2), name: o.zone_name || 'Zona', x: +o.x || 0, y: +o.y || 0, type: o.type || 'II', enabled: o.enabled !== 'false' }); } return cfg; } if (rows[0].length === 2) { const cfg = deepClone(defaultProject); for (let i = 0; i < rows.length; i++) { if (rows[i].length < 2) continue; setPath(cfg, String(rows[i][0]||'').trim().toLowerCase(), coerce(rows[i][1])); } return normalizeProject(cfg); } throw new Error('Formato CSV no reconocido.'); }
 function parseZonesFromRows(rows){ const cfg=deepClone(defaultProject); cfg.zones=[]; for(let i=0;i<rows.length;i++){ const r=rows[i]; if(!r||!r[0])continue; const name=String(r[0]||'').trim(); if(!name||name.startsWith('#'))continue; cfg.zones.push({id:'z'+Math.random().toString(36).slice(2),name,x:parseFloat(r[1])||0,y:parseFloat(r[2])||0,type:'II',enabled:true}); } return cfg; }
 function setPath(obj,path,val){ const parts=path.split('.'); let t=obj; for(let i=0;i<parts.length-1;i++){ if(!(parts[i] in t))t[parts[i]]={}; t=t[parts[i]]; } t[parts[parts.length-1]]=val; }
 function coerce(v){ if(v===undefined||v===null||v==='')return''; if(v===true||v===false)return v; const s=String(v).trim(); if(/^(true|sí|si)$/i.test(s))return true; if(/^(false|no)$/i.test(s))return false; if(!isNaN(Number(s)))return Number(s); return s; }
@@ -448,11 +281,11 @@ function flatten(obj,prefix='',rows=[]){ if(Array.isArray(obj))obj.forEach((z,i)
 function csvEscape(x){ const s=String(x); return /[,"\n]/.test(s)?`"${s.replaceAll('"','""')}"`:s; }
 function downloadTemplate(){ const rows=flatten(defaultProject).map(r=>r.map(csvEscape).join(',')); const b=new Blob(['parameter,value\n'+rows.join('\n')],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='plantilla.csv'; a.click(); }
 
-/* ---------- NAVEGACIÓN ---------- */
+/* Navegación */
 function startManual(){ project=deepClone(defaultProject); document.getElementById('landing').classList.add('hidden'); document.getElementById('app').classList.remove('hidden'); initApp(); }
 function goHome(){ document.getElementById('app').classList.add('hidden'); document.getElementById('landing').classList.remove('hidden'); }
 
-/* ---------- CÁLCULOS ---------- */
+/* Cálculos */
 const $=id=>document.getElementById(id);
 function uid(){return 'z'+Math.random().toString(36).slice(2,9);}
 function num(id){return parseFloat($(id).value)||0;}
@@ -462,13 +295,18 @@ function chargePerHole(){ let d=project.design,e=project.explosive,L=Math.max(0.
 function chargePerDelay(){return chargePerHole()*Math.max(1,project.design.holesPerDelay);}
 function effectiveCharge(){return chargePerDelay()*Math.min(1,project.explosive.coupling);}
 function basePPV(qeff,dist){dist=Math.max(0.1,dist);return project.rock.Kfar*Math.pow(Math.sqrt(qeff)/dist,project.rock.nfar);}
-function p80Estimate(){ let d=project.design,e=project.explosive,r=project.rock,V=d.burdenM*d.spacingM*d.benchH,qh=chargePerHole(); let x50=r.A*Math.pow(V/Math.max(0.01,qh),0.8)*Math.pow(qh,1/6)*Math.pow(115/e.rwsPercent,0.633)*10; return x50*Math.pow(-Math.log(0.2),1/1.8); }
+function p80Estimate(){
+  let d=project.design,e=project.explosive,r=project.rock,V=d.burdenM*d.spacingM*d.benchH,qh=chargePerHole();
+  let x50=r.A*Math.pow(V/Math.max(0.01,qh),0.8)*Math.pow(qh,1/6)*Math.pow(115/e.rwsPercent,0.633)*10;
+  return {p80: x50*Math.pow(-Math.log(0.2),1/1.8), x50: x50};
+}
 function dinLimit(type,freq){ let f=Math.max(1,freq); if(type==='I')return f<=10?20:f<=50?20+(f-10)*0.5:f<=100?40+(f-50)*0.2:50; if(type==='II')return f<=10?5:f<=50?5+(f-10)*0.25:f<=100?15+(f-50)*0.12:20; return f<=10?3:f<=50?3+(f-10)*0.125:8; }
 function presplitFactor(){return project.presplit.enabled?Math.max(0.2,Math.exp(-project.presplit.lambda*project.presplit.bufferM*project.presplit.quality)):1;}
 function presplitLineParams(){ let ang=project.presplit.angleDeg*Math.PI/180,offset=project.presplit.offsetM; let px=project.blast.x+Math.cos(ang+Math.PI/2)*offset,py=project.blast.y+Math.sin(ang+Math.PI/2)*offset; return {px,py,dx:Math.cos(ang),dy:Math.sin(ang)}; }
 function isProtected(wx,wy){ if(!project.presplit.enabled)return false; let {px,py,dx,dy}=presplitLineParams(); let bx=project.blast.x,by=project.blast.y; return ((wx-px)*dy-(wy-py)*dx)*((bx-px)*dy-(by-py)*dx)<0; }
 function evaluate(){
-  let qh=chargePerHole(),qd=chargePerDelay(),qe=effectiveCharge(),p80=p80Estimate();
+  let qh=chargePerHole(),qd=chargePerDelay(),qe=effectiveCharge();
+  let {p80, x50} = p80Estimate();
   let zres=project.zones.filter(z=>z.enabled).map(z=>{
     let R=Math.hypot(project.blast.x-z.x,project.blast.y-z.y);
     let prot=project.presplit.enabled&&isProtected(z.x,z.y);
@@ -489,14 +327,16 @@ function evaluate(){
   let costPerTon=totalCost/tons;
   let annualTons=project.costs.dailyProd*project.costs.daysYear;
   let vpn=(annualTons*8.5-annualTons*costPerTon)*12/1e6;
-  results={qh,qd,qe,p80,zres,maxPPV,global,costPerTon,vpn,tonsPerBlast:tons};
+  results={qh,qd,qe,p80,x50,zres,maxPPV,global,costPerTon,vpn,tonsPerBlast:tons, drillCost, explCost, loadCost, haulCost, totalCost};
   return results;
 }
 
-/* ---------- UI ---------- */
+/* UI */
 function syncToInputs(){
   let b=project.blast,d=project.design,e=project.explosive,r=project.rock,p=project.presplit,c=project.costs;
-  $('blastX').value=b.x;$('blastY').value=b.y;$('freqHz').value=b.frequencyHz;$('ppvLimit').value=b.ppvGeneralLimit;
+  $('blastX').value=b.x; $('blastX_num').value=b.x;
+  $('blastY').value=b.y; $('blastY_num').value=b.y;
+  $('freqHz').value=b.frequencyHz;$('ppvLimit').value=b.ppvGeneralLimit;
   $('p80Target').value=d.p80Target;$('D').value=d.diameterMm;$('B').value=d.burdenM;$('S').value=d.spacingM;
   $('H').value=d.benchH;$('T').value=d.stemmingM;$('J').value=d.subdrillingM;$('holesDelay').value=d.holesPerDelay;$('delays').value=d.delays;
   $('rhoExpl').value=e.densityKgM3;$('rws').value=e.rwsPercent;$('coupling').value=e.coupling;
@@ -527,6 +367,13 @@ function updateAll(){
   let tbody=$('zoneTable');tbody.innerHTML='';
   results.zres.forEach(r=>tbody.insertAdjacentHTML('beforeend',`<tr><td>${r.zone.name}</td><td>${r.zone.type}</td><td>${fmt(r.R,1)}</td><td>${r.protectedFlag?'Sí':'No'}</td><td>${fmt(r.ppv,2)}</td><td>${fmt(r.lim,1)}</td><td><span class="badge ${r.status}">${r.status.toUpperCase()}</span></td></tr>`));
   drawMap(); drawChart();
+  drawFragmentCurve();
+  drawDINCurve();
+  drawEnergyFragment();
+  drawBarChart();
+  drawCostPie();
+  drawTornadoCost();
+  drawTornadoPPV();
 }
 function sensitivityAnalysis(){
   let base=JSON.parse(JSON.stringify(project));
@@ -558,20 +405,273 @@ function renderZones(){
         <input type="number" value="${z.x}" oninput="project.zones[${i}].x=+this.value; updateAll();" placeholder="X" style="width:70px;">
         <input type="number" value="${z.y}" oninput="project.zones[${i}].y=+this.value; updateAll();" placeholder="Y" style="width:70px;">
         <select onchange="project.zones[${i}].type=this.value; updateAll();" style="width:70px;">
-          <option value="I" ${z.type==='I'?'selected':''}>I</option>
-          <option value="II" ${z.type==='II'?'selected':''}>II</option>
-          <option value="III" ${z.type==='III'?'selected':''}>III</option>
+          <option value="I" ${z.type==='I'?'selected':''}>I</option><option value="II" ${z.type==='II'?'selected':''}>II</option><option value="III" ${z.type==='III'?'selected':''}>III</option>
         </select>
         <button onclick="project.zones.splice(${i},1);renderZones();updateAll();" style="flex-shrink:0;">X</button>
-      </div>
-    `;
+      </div>`;
     container.appendChild(div);
   });
 }
 function resetProject(){project=JSON.parse(JSON.stringify(defaultProject));syncToInputs();renderZones();updateAll();}
 
-/* ---------- MAPA Y GRÁFICO ---------- */
+/* ---------- GRÁFICOS ---------- */
 function setupCanvas(canvasId){ let canvas=$(canvasId),rect=canvas.parentElement.getBoundingClientRect(); canvas.width=rect.width*2;canvas.height=rect.height*2; let ctx=canvas.getContext('2d');ctx.scale(2,2); return {ctx,w:rect.width,h:rect.height}; }
+
+/* Curva de Fragmentación */
+function drawFragmentCurve(){
+  if(!results) evaluate();
+  let {ctx,w,h}=setupCanvas('fragCanvas');
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
+  let margin={left:50,right:20,top:20,bottom:30}, plotW=w-margin.left-margin.right, plotH=h-margin.top-margin.bottom;
+  let x50 = results.x50, n = 1.8, xc = x50 / Math.pow(Math.log(2), 1/n);
+  let maxX = Math.max(results.p80*2, 500);
+  function mapX(x){return margin.left+(x/maxX)*plotW;}
+  function mapY(y){return margin.top+plotH-y*plotH;}
+  ctx.strokeStyle='#aaa';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(margin.left,margin.top);ctx.lineTo(margin.left,margin.top+plotH);ctx.lineTo(w-margin.right,margin.top+plotH);ctx.stroke();
+  ctx.fillStyle='#3a332a';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  for(let i=0;i<=maxX;i+=200)ctx.fillText(i,mapX(i),margin.top+plotH+12);
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let i=0;i<=1;i+=0.2)ctx.fillText((i*100).toFixed(0)+'%',margin.left-6,mapY(i));
+  ctx.strokeStyle='#a5561f';ctx.lineWidth=2;ctx.beginPath();
+  for(let x=0.1;x<=maxX;x+=maxX/200){
+    let y=1-Math.exp(-Math.pow(x/xc,n));
+    let sx=mapX(x),sy=mapY(y);
+    x===0.1?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+  }
+  ctx.stroke();
+  ctx.setLineDash([4,4]);ctx.strokeStyle='#e09e2f';ctx.beginPath();
+  ctx.moveTo(mapX(results.p80),margin.top);ctx.lineTo(mapX(results.p80),margin.top+plotH);ctx.stroke();
+  ctx.fillStyle='#e09e2f';ctx.fillText('P80 est.',mapX(results.p80)+3,margin.top+10);
+  ctx.strokeStyle='#3b7a3b';ctx.beginPath();
+  ctx.moveTo(mapX(project.design.p80Target),margin.top);ctx.lineTo(mapX(project.design.p80Target),margin.top+plotH);ctx.stroke();
+  ctx.fillStyle='#3b7a3b';ctx.fillText('Obj.',mapX(project.design.p80Target)+3,margin.top+22);
+  ctx.setLineDash([]);
+}
+
+/* Límites DIN 4150 */
+function drawDINCurve(){
+  let {ctx,w,h}=setupCanvas('dinCanvas');
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
+  let margin={left:50,right:20,top:20,bottom:30}, plotW=w-margin.left-margin.right, plotH=h-margin.top-margin.bottom;
+  let maxF=150, maxPPV=60;
+  function mapX(f){return margin.left+(f/maxF)*plotW;}
+  function mapY(v){return margin.top+plotH-(v/maxPPV)*plotH;}
+  ctx.strokeStyle='#aaa';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(margin.left,margin.top);ctx.lineTo(margin.left,margin.top+plotH);ctx.lineTo(w-margin.right,margin.top+plotH);ctx.stroke();
+  ctx.fillStyle='#3a332a';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  for(let f=0;f<=maxF;f+=30)ctx.fillText(f+' Hz',mapX(f),margin.top+plotH+12);
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let v=0;v<=maxPPV;v+=10)ctx.fillText(v, margin.left-6, mapY(v));
+  ctx.fillText('mm/s', margin.left-6, margin.top-8);
+  let types=['I','II','III'], colors=['#2ecc71','#f1c40f','#e74c3c'];
+  types.forEach((type,i)=>{
+    ctx.strokeStyle=colors[i];ctx.lineWidth=2.5;ctx.beginPath();
+    for(let f=1;f<=maxF;f++){
+      let v=dinLimit(type,f);
+      let sx=mapX(f), sy=mapY(v);
+      f===1?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+    }
+    ctx.stroke();
+    ctx.fillStyle=colors[i];ctx.font='10px Segoe UI';
+    ctx.fillText('Tipo '+type, mapX(110), mapY(dinLimit(type,110))-5);
+  });
+  let freq=project.blast.frequencyHz;
+  ctx.strokeStyle='#a5561f';ctx.lineWidth=2.5;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(mapX(freq),margin.top);ctx.lineTo(mapX(freq),margin.top+plotH);ctx.stroke();
+  ctx.fillStyle='#a5561f';ctx.fillText('f='+fmt(freq,1), mapX(freq)+4, margin.top+14);
+  ctx.setLineDash([]);
+}
+
+/* Energía vs Fragmentación */
+function drawEnergyFragment(){
+  if(!results) evaluate();
+  let {ctx,w,h}=setupCanvas('energyCanvas');
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
+  let margin={left:55,right:20,top:20,bottom:30}, plotW=w-margin.left-margin.right, plotH=h-margin.top-margin.bottom;
+  let baseQd=results.qd;
+  let maxQ=baseQd*1.8, maxP80=Math.max(project.design.p80Target*1.5, results.p80*1.3);
+  if(maxQ<10) maxQ=10;
+  function mapX(q){return margin.left+(q/maxQ)*plotW;}
+  function mapY(p){return margin.top+plotH-(p/maxP80)*plotH;}
+  ctx.strokeStyle='#aaa';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(margin.left,margin.top);ctx.lineTo(margin.left,margin.top+plotH);ctx.lineTo(w-margin.right,margin.top+plotH);ctx.stroke();
+  ctx.fillStyle='#3a332a';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  for(let q=0;q<=maxQ;q+=maxQ/4)ctx.fillText(fmt(q,1),mapX(q),margin.top+plotH+12);
+  ctx.fillText('kg/ret', margin.left+plotW/2, margin.top+plotH+22);
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let p=0;p<=maxP80;p+=Math.ceil(maxP80/4))ctx.fillText(p.toFixed(0), margin.left-6, mapY(p));
+  ctx.fillText('mm', margin.left-6, margin.top-8);
+  // curva
+  let origDesign=JSON.parse(JSON.stringify(project.design));
+  ctx.strokeStyle='#a5561f';ctx.lineWidth=2.5;ctx.beginPath();
+  for(let q=1;q<=maxQ;q+=maxQ/100){
+    let ratio=q/baseQd;
+    project.design.holesPerDelay=Math.max(1, Math.round(origDesign.holesPerDelay*ratio));
+    let {p80}=p80Estimate();
+    let sx=mapX(chargePerDelay()), sy=mapY(p80);
+    q===1?ctx.moveTo(sx,sy):ctx.lineTo(sx,sy);
+  }
+  ctx.stroke();
+  project.design=origDesign;
+  // punto actual
+  let sx=mapX(baseQd), sy=mapY(results.p80);
+  ctx.fillStyle='#c0392b';ctx.beginPath();ctx.arc(sx,sy,5,0,2*Math.PI);ctx.fill();
+  ctx.fillStyle='#3a332a';ctx.font='10px Segoe UI';ctx.fillText('Actual',sx+8,sy-4);
+  // línea obj
+  ctx.strokeStyle='#3b7a3b';ctx.setLineDash([4,4]);ctx.beginPath();
+  ctx.moveTo(margin.left,mapY(project.design.p80Target));ctx.lineTo(w-margin.right,mapY(project.design.p80Target));ctx.stroke();
+  ctx.fillStyle='#3b7a3b';ctx.fillText('P80 obj.', margin.left+4, mapY(project.design.p80Target)-4);
+  ctx.setLineDash([]);
+}
+
+/* Barras Apiladas */
+function drawBarChart(){
+  if(!results) evaluate();
+  let {ctx,w,h}=setupCanvas('barCanvas');
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
+  let margin={left:70,right:20,top:20,bottom:30}, plotW=w-margin.left-margin.right, plotH=h-margin.top-margin.bottom;
+  let items=[results.drillCost,results.explCost,results.loadCost,results.haulCost];
+  let labels=['Perforación','Explosivos','Carguío','Transporte'];
+  let colors=['#8B4513','#DAA520','#2E5A2E','#A5561F'];
+  let maxVal=Math.max(...items)*1.2;
+  if(maxVal===0) maxVal=1;
+  function mapY(v){return margin.top+plotH-(v/maxVal)*plotH;}
+  ctx.strokeStyle='#aaa';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(margin.left,margin.top);ctx.lineTo(margin.left,margin.top+plotH);ctx.lineTo(w-margin.right,margin.top+plotH);ctx.stroke();
+  ctx.fillStyle='#3a332a';ctx.font='9px Segoe UI';ctx.textAlign='right';ctx.textBaseline='middle';
+  for(let v=0;v<=maxVal;v+=maxVal/4)ctx.fillText('$'+fmt(v,0), margin.left-8, mapY(v));
+  let barW=plotW*0.6, startX=margin.left+plotW*0.2;
+  items.forEach((val,i)=>{
+    ctx.fillStyle=colors[i];
+    let h=(val/maxVal)*plotH;
+    ctx.fillRect(startX, mapY(val), barW, h);
+    if(val>0){ ctx.fillStyle='#fff';ctx.font='bold 10px Segoe UI';ctx.textAlign='center';ctx.fillText('$'+fmt(val,0), startX+barW/2, mapY(val)+14); }
+  });
+  for(let i=0;i<labels.length;i++){
+    ctx.fillStyle=colors[i];ctx.fillRect(margin.left+5, margin.top+8+i*18,10,10);
+    ctx.fillStyle='#3a332a';ctx.font='10px Segoe UI';ctx.textAlign='left';ctx.fillText(labels[i], margin.left+20, margin.top+17+i*18);
+  }
+}
+
+/* Torta de Costos */
+function drawCostPie(){
+  if(!results) evaluate();
+  let {ctx,w,h}=setupCanvas('costCanvas');
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
+  let costs=[results.drillCost, results.explCost, results.loadCost, results.haulCost];
+  let labels=['Perforación','Explosivos','Carguío','Transporte'];
+  let colors=['#8B4513','#DAA520','#2E5A2E','#A5561F'];
+  let total=costs.reduce((a,b)=>a+b,0);
+  if(total===0) return;
+  let centerX=w*0.4, centerY=h*0.5, radius=Math.min(centerX-20, centerY-20);
+  let startAngle=-Math.PI/2;
+  for(let i=0;i<costs.length;i++){
+    let angle=costs[i]/total*2*Math.PI;
+    ctx.fillStyle=colors[i];ctx.beginPath();ctx.moveTo(centerX,centerY);ctx.arc(centerX,centerY,radius,startAngle,startAngle+angle);ctx.closePath();ctx.fill();
+    let midAngle=startAngle+angle/2;
+    let lx=centerX+Math.cos(midAngle)*(radius*0.65), ly=centerY+Math.sin(midAngle)*(radius*0.65);
+    ctx.fillStyle='#fff';ctx.font='bold 10px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText((costs[i]/total*100).toFixed(1)+'%',lx,ly);
+    startAngle+=angle;
+  }
+  let legendX=centerX+radius+15, legendY=centerY-(costs.length*16)/2;
+  for(let i=0;i<labels.length;i++){
+    ctx.fillStyle=colors[i];ctx.fillRect(legendX,legendY+i*20,10,10);
+    ctx.fillStyle='#3a332a';ctx.font='10px Segoe UI';ctx.textAlign='left';ctx.fillText(labels[i],legendX+16,legendY+i*20+9);
+  }
+}
+
+/* Tornado Costo */
+function getTornadoCostData(){
+  let baseProject = JSON.parse(JSON.stringify(project));
+  let baseCost = results.costPerTon;
+  let variables = [
+    {key:'burdenM', label:'Burden'},
+    {key:'spacingM', label:'Espaciamiento'},
+    {key:'diameterMm', label:'Diámetro'},
+    {key:'holesPerDelay', label:'Taladros/retardo'}
+  ];
+  let data=[];
+  variables.forEach(v=>{
+    let orig=baseProject.design[v.key];
+    project.design[v.key]=orig*0.8; evaluate(); let lowCost=results.costPerTon;
+    project.design[v.key]=orig*1.2; evaluate(); let highCost=results.costPerTon;
+    project.design[v.key]=orig;
+    data.push({label:v.label, low:lowCost-baseCost, high:highCost-baseCost});
+  });
+  evaluate();
+  return data.sort((a,b)=>Math.max(Math.abs(b.low),Math.abs(b.high))-Math.max(Math.abs(a.low),Math.abs(a.high)));
+}
+function drawTornadoCost(){
+  if(!results) evaluate();
+  let {ctx,w,h}=setupCanvas('tornadoCostCanvas');
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
+  let data=getTornadoCostData();
+  let margin={left:100,right:40,top:20,bottom:25}, plotW=w-margin.left-margin.right, plotH=h-margin.top-margin.bottom;
+  let zeroX=margin.left+plotW/2, barH=Math.min(24,(plotH-10)/data.length);
+  ctx.strokeStyle='#aaa';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(zeroX,margin.top);ctx.lineTo(zeroX,margin.top+plotH);ctx.stroke();
+  data.forEach((item,i)=>{
+    let y=margin.top+i*barH+barH/2;
+    let maxV=Math.max(...data.map(d=>Math.max(Math.abs(d.low),Math.abs(d.high))));
+    if(maxV===0) maxV=0.01;
+    let lowW=Math.abs(item.low)/maxV*(plotW/2-10), highW=Math.abs(item.high)/maxV*(plotW/2-10);
+    ctx.fillStyle='#2E5A2E';ctx.fillRect(zeroX-lowW, y-barH/2, lowW, barH);
+    ctx.fillStyle='#A5561F';ctx.fillRect(zeroX, y-barH/2, highW, barH);
+    ctx.fillStyle='#3a332a';ctx.font='bold 11px Segoe UI';ctx.textAlign='right';ctx.fillText(item.label, margin.left-10, y+4);
+    ctx.fillText(item.low.toFixed(2), zeroX-lowW-6, y+4);
+    ctx.textAlign='left';ctx.fillText(item.high.toFixed(2), zeroX+highW+6, y+4);
+  });
+  ctx.fillStyle='#3a332a';ctx.font='10px Segoe UI';ctx.textAlign='center';
+  ctx.fillText('← -20%   $/t    +20% →', zeroX, h-8);
+}
+
+/* Tornado PPV */
+function getTornadoPPVData(){
+  let baseProject = JSON.parse(JSON.stringify(project));
+  let basePPV = results.maxPPV;
+  let variables = [
+    {key:'burdenM', label:'Burden'},
+    {key:'spacingM', label:'Espaciamiento'},
+    {key:'diameterMm', label:'Diámetro'},
+    {key:'holesPerDelay', label:'Taladros/retardo'}
+  ];
+  let data=[];
+  variables.forEach(v=>{
+    let orig=baseProject.design[v.key];
+    project.design[v.key]=orig*0.8; evaluate(); let lowPPV=results.maxPPV;
+    project.design[v.key]=orig*1.2; evaluate(); let highPPV=results.maxPPV;
+    project.design[v.key]=orig;
+    data.push({label:v.label, low:lowPPV-basePPV, high:highPPV-basePPV});
+  });
+  evaluate();
+  return data.sort((a,b)=>Math.max(Math.abs(b.low),Math.abs(b.high))-Math.max(Math.abs(a.low),Math.abs(a.high)));
+}
+function drawTornadoPPV(){
+  if(!results) evaluate();
+  let {ctx,w,h}=setupCanvas('tornadoPPVCanvas');
+  ctx.clearRect(0,0,w,h); ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
+  let data=getTornadoPPVData();
+  let margin={left:100,right:40,top:20,bottom:25}, plotW=w-margin.left-margin.right, plotH=h-margin.top-margin.bottom;
+  let zeroX=margin.left+plotW/2, barH=Math.min(24,(plotH-10)/data.length);
+  ctx.strokeStyle='#aaa';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(zeroX,margin.top);ctx.lineTo(zeroX,margin.top+plotH);ctx.stroke();
+  data.forEach((item,i)=>{
+    let y=margin.top+i*barH+barH/2;
+    let maxV=Math.max(...data.map(d=>Math.max(Math.abs(d.low),Math.abs(d.high))));
+    if(maxV===0) maxV=0.01;
+    let lowW=Math.abs(item.low)/maxV*(plotW/2-10), highW=Math.abs(item.high)/maxV*(plotW/2-10);
+    ctx.fillStyle='#2E5A2E';ctx.fillRect(zeroX-lowW, y-barH/2, lowW, barH);
+    ctx.fillStyle='#A5561F';ctx.fillRect(zeroX, y-barH/2, highW, barH);
+    ctx.fillStyle='#3a332a';ctx.font='bold 11px Segoe UI';ctx.textAlign='right';ctx.fillText(item.label, margin.left-10, y+4);
+    ctx.fillText(item.low.toFixed(2), zeroX-lowW-6, y+4);
+    ctx.textAlign='left';ctx.fillText(item.high.toFixed(2), zeroX+highW+6, y+4);
+  });
+  ctx.fillStyle='#3a332a';ctx.font='10px Segoe UI';ctx.textAlign='center';
+  ctx.fillText('← -20%   mm/s    +20% →', zeroX, h-8);
+}
+
+/* ---------- MAPA Y PPV VS DISTANCIA ---------- */
+function setupCanvasMap(canvasId){ let canvas=$(canvasId),rect=canvas.parentElement.getBoundingClientRect(); canvas.width=rect.width*2;canvas.height=rect.height*2; let ctx=canvas.getContext('2d');ctx.scale(2,2); return {ctx,w:rect.width,h:rect.height}; }
 function worldToScreen(x,y,w,h){return {x:w/2+map.ox+x*map.scale,y:h/2+map.oy-y*map.scale};}
 function screenToWorld(sx,sy,w,h){return {x:(sx-w/2-map.ox)/map.scale,y:-(sy-h/2-map.oy)/map.scale};}
 function drawHeatmap(ctx,w,h){
@@ -592,7 +692,7 @@ function drawHeatmap(ctx,w,h){
   }}
 }
 function drawMap(){
-  if(!results)evaluate(); let {ctx,w,h}=setupCanvas('mapCanvas');
+  if(!results)evaluate(); let {ctx,w,h}=setupCanvasMap('mapCanvas');
   ctx.clearRect(0,0,w,h);ctx.fillStyle='#fcf9f2';ctx.fillRect(0,0,w,h);
   drawHeatmap(ctx,w,h);
   ctx.strokeStyle='#c0b0a0';ctx.lineWidth=0.5;ctx.fillStyle='#5b4b3a';ctx.font='9px Segoe UI';
@@ -615,16 +715,16 @@ function drawMap(){
   results.zres.forEach(r=>{ let {x,y}=worldToScreen(r.zone.x,r.zone.y,w,h); ctx.fillStyle=r.status==='danger'?'#c0392b':r.status==='warn'?'#e67e22':'#27ae60'; ctx.fillRect(x-6,y-6,12,12); ctx.fillStyle='#3a332a';ctx.font='9px Segoe UI';ctx.fillText(r.zone.name,x+10,y+3); });
 }
 function drawChart(){
-  if(!results)evaluate(); let {ctx,w,h}=setupCanvas('chartCanvas');
+  if(!results)evaluate(); let {ctx,w,h}=setupCanvasMap('chartCanvas');
   ctx.clearRect(0,0,w,h);ctx.fillStyle='#fffef9';ctx.fillRect(0,0,w,h);
-  let margin={left:55,right:25,top:30,bottom:40},plotW=w-margin.left-margin.right,plotH=h-margin.top-margin.bottom;
+  let margin={left:55,right:25,top:25,bottom:35},plotW=w-margin.left-margin.right,plotH=h-margin.top-margin.bottom;
   let maxDist=800,maxPPV=Math.max(project.blast.ppvGeneralLimit*1.3,...results.zres.map(z=>z.ppv),15);maxPPV=Math.ceil(maxPPV/5)*5;
   function mapX(d){return margin.left+(d/maxDist)*plotW;} function mapY(p){return margin.top+plotH-(p/maxPPV)*plotH;}
   ctx.strokeStyle='#aaa';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(margin.left,margin.top);ctx.lineTo(margin.left,margin.top+plotH);ctx.lineTo(margin.left+plotW,margin.top+plotH);ctx.stroke();
-  ctx.fillStyle='#3a332a';ctx.font='10px Segoe UI';ctx.textAlign='center';
-  for(let d=0;d<=maxDist;d+=200)ctx.fillText(d+' m',mapX(d),margin.top+plotH+16);
+  ctx.fillStyle='#3a332a';ctx.font='9px Segoe UI';ctx.textAlign='center';
+  for(let d=0;d<=maxDist;d+=200)ctx.fillText(d+' m',mapX(d),margin.top+plotH+14);
   ctx.textAlign='right';ctx.textBaseline='middle'; for(let p=0;p<=maxPPV;p+=5)ctx.fillText(p.toFixed(0),margin.left-6,mapY(p));
-  ctx.fillText('mm/s',margin.left-6,margin.top-8); ctx.textAlign='center';ctx.fillText('Distancia (m)',w/2,h-8);
+  ctx.fillText('mm/s',margin.left-6,margin.top-8); ctx.textAlign='center';ctx.fillText('Distancia (m)',w/2,h-6);
   ctx.strokeStyle='#a5561f';ctx.lineWidth=2;ctx.beginPath();
   for(let d=0;d<=maxDist;d+=2){ let ppv=basePPV(effectiveCharge(),d)*(project.presplit.enabled?presplitFactor():1); let x=mapX(d),y=mapY(ppv); d===0?ctx.moveTo(x,y):ctx.lineTo(x,y); } ctx.stroke();
   ctx.strokeStyle='#e09e2f';ctx.setLineDash([5,3]);ctx.beginPath();ctx.moveTo(margin.left,mapY(project.blast.ppvGeneralLimit));ctx.lineTo(margin.left+plotW,mapY(project.blast.ppvGeneralLimit));ctx.stroke();ctx.setLineDash([]);
@@ -633,7 +733,6 @@ function drawChart(){
 }
 
 function initApp(){ syncToInputs(); renderZones(); updateAll(); }
-
 window.addEventListener('DOMContentLoaded',()=>{
   let canvas=$('mapCanvas');
   canvas.addEventListener('mousedown',e=>{map.drag=true;map.lx=e.clientX;map.ly=e.clientY;});
